@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Military PFA Pacer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Header & Branch Selector -->
+    <header class="bg-slate-800 border-b border-yellow-600 p-4 space-y-4">
+        <div class="text-center">
+            <h1 class="text-xl font-black tracking-widest text-yellow-500 uppercase">⚡ MILITARY PFA PACER</h1>
+            <p class="text-xs text-slate-400">Official Physical Fitness Assessment Training Assistant</p>
+        </div>
+
+        <!-- Branch Selection Buttons -->
+        <div class="grid grid-cols-3 gap-2 max-w-md mx-auto">
+            <button onclick="setBranch('airforce')" id="btn-airforce" class="py-2 px-1 rounded font-bold text-xs border border-blue-600 bg-blue-900/40 text-blue-400 transition-all">
+                AIR FORCE
+            </button>
+            <button onclick="setBranch('navy')" id="btn-navy" class="py-2 px-1 rounded font-bold text-xs border border-slate-700 bg-slate-800 text-slate-400 transition-all">
+                NAVY
+            </button>
+            <button onclick="setBranch('army')" id="btn-army" class="py-2 px-1 rounded font-bold text-xs border border-green-600 bg-slate-800 text-slate-400 transition-all">
+                ARMY
+            </button>
+        </div>
+
+        <!-- Demographics Selector (Customized 5-Year increments for USAF compatibility) -->
+        <div class="grid grid-cols-2 gap-2 max-w-md mx-auto text-xs">
+            <select id="select-gender" onchange="updateBranchStandards()" class="bg-slate-700 border border-slate-600 text-white rounded p-2">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+            <select id="select-age" onchange="updateBranchStandards()" class="bg-slate-700 border border-slate-600 text-white rounded p-2">
+                <option value="under25">&lt; 25 Years</option>
+                <option value="25to29">25 - 29 Years</option>
+                <option value="30to34">30 - 34 Years</option>
+                <option value="35to39">35 - 39 Years</option>
+                <option value="40to44">40 - 44 Years</option>
+                <option value="45to49">45 - 49 Years</option>
+                <option value="50plus">50+ Years</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main class="flex-grow flex flex-col justify-center items-center px-6 py-4 space-y-6">
+        
+        <!-- Live Standards Display -->
+        <div class="text-center space-y-1">
+            <span id="target-label" class="text-xs font-bold text-yellow-500 uppercase tracking-widest block">AIR FORCE ASSESSMENT RUN</span>
+            <span id="target-rule" class="text-sm text-slate-300">Goal: 1.5 Miles in under 13:36</span>
+        </div>
+
+        <!-- Large Metrics Readout -->
+        <div class="w-full max-w-sm bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl space-y-6">
+            
+            <!-- Distance Display -->
+            <div class="text-center">
+                <span class="text-6xl font-extrabold text-white" id="dist-display">0.00</span>
+                <span class="text-lg font-bold text-slate-400 uppercase tracking-wider block mt-1">MILES</span>
+            </div>
+
+            <hr class="border-slate-700">
+
+            <!-- Split Stats Grid -->
+            <div class="grid grid-cols-2 gap-4 text-center">
+                <div class="border-r border-slate-700">
+                    <span class="text-2xl font-bold text-white block" id="time-display">00:00</span>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Time Elapsed</span>
+                </div>
+                <div>
+                    <span class="text-2xl font-bold text-white block" id="pace-display">--:--</span>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider">Current Pace</span>
+                </div>
+            </div>
+
+            <!-- Target Status Banner -->
+            <div id="status-banner" class="bg-slate-700 text-yellow-500 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide transition-all duration-300">
+                Awaiting GPS Signal...
+            </div>
+        </div>
+
+        <!-- Simulator Helper Controls -->
+        <div class="w-full max-w-sm bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 space-y-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">🧪 Simulation & Testing Controls</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="simulateRunStep(0.1, 50)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 px-3 rounded font-semibold transition">
+                    Simulate Slow Pace
+                </button>
+                <button onclick="simulateRunStep(0.1, 38)" class="bg-slate-700 hover:bg-slate-600 text-white text-xs py-2 px-3 rounded font-semibold transition">
+                    Simulate Pass Pace
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Navigation / Action Bar -->
+    <footer class="bg-slate-800 p-6 border-t border-slate-700 flex justify-center">
+        <button id="action-btn" onclick="toggleRun()" class="w-full max-w-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-lg py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all transform active:scale-95">
+            🏁 Start Training Run
+        </button>
+    </footer>
+
+    <!-- Core App Logic -->
+    <script>
+        // Physical Fitness Standards Matrix with proper 5-year groupings
+        const StandardsDatabase = {
+            airforce: {
+                name: "Air Force Fitness Assessment",
+                distance: 1.5,
+                rules: {
+                    // Maximum passing times in seconds based on 5-year brackets
+                    male: {
+                        under25: 816,   // 13:36
+                        "25to29": 840,  // 14:00
+                        "30to34": 862,  // 14:22
+                        "35to39": 884,  // 14:44
+                        "40to44": 915,  // 15:15
+                        "45to49": 945,  // 15:45
+                        "50plus": 1000  // 16:40
+                    },
+                    female: {
+                        under25: 984,   // 16:24
+                        "25to29": 1008, // 16:48
+                        "30to34": 1032, // 17:12
+                        "35to39": 1056, // 17:36
+                        "40to44": 1090, // 18:10
+                        "45to49": 1120, // 18:40
+                        "50plus": 1180  // 19:40
+                    }
+                }
+            },
+            navy: {
+                name: "Navy Physical Readiness Test",
+                distance: 1.5,
+                rules: {
+                    // Mapped to match Navy brackets closest to 5-year UI structures
+                    male: {
+                        under25: 810, "25to29": 840, "30to34": 900, "35to39": 900, "40to44": 960, "45to49": 960, "50plus": 1020
+                    },
+                    female: {
+                        under25: 930, "25to29": 990, "30to34": 1020, "35to39": 1020, "40to44": 1080, "45to49": 1080, "50plus": 1140
+                    }
+                }
+            },
+            army: {
+                name: "Army Combat Fitness Test (ACFT)",
+                distance: 2.0,
+                rules: {
+                    male: {
+                        under25: 1320, "25to29": 1320, "30to34": 1380, "35to39": 1380, "40to44": 1440, "45to49": 1440, "50plus": 1500
+                    },
+                    female: {
+                        under25: 1440, "25to29": 1440, "30to34": 1500, "35to39": 1500, "40to44": 1560, "45to49": 1560, "50plus": 1620
+                    }
+                }
+            }
+        };
+
+        // Active State
+        let currentBranch = "airforce";
+        let targetDistance = 1.5;
+        let targetMaxTimeSeconds = 816; 
+        let targetPaceSeconds = 544; 
+
+        let isRunning = false;
+        let elapsedSeconds = 0;
+        let totalDistanceMiles = 0.00;
+        let watchId = null;
+        let timerId = null;
+        let lastCueTime = 0;
+
+        // HTML Elements
+        const distDisplay = document.getElementById('dist-display');
+        const timeDisplay = document.getElementById('time-display');
+        const paceDisplay = document.getElementById('pace-display');
+        const statusBanner = document.getElementById('status-banner');
+        const actionBtn = document.getElementById('action-btn');
+        const targetLabel = document.getElementById('target-label');
+        const targetRule = document.getElementById('target-rule');
+        const selectGender = document.getElementById('select-gender');
+        const selectAge = document.getElementById('select-age');
+
+        const synth = window.speechSynthesis;
+
+        function speak(text) {
+            if (synth.speaking) synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            synth.speak(utterance);
+        }
+
+        function setBranch(branch) {
+            currentBranch = branch;
+            
+            ["airforce", "navy", "army"].forEach(b => {
+                const btn = document.getElementById(`btn-${b}`);
+                let colorClass = b === "airforce" ? "blue-600 bg-blue-900/40 text-blue-400" : 
+                                 b === "navy" ? "slate-600 bg-slate-700 text-white" : "green-600 bg-green-900/40 text-green-400";
+                
+                if (b === currentBranch) {
+                    btn.className = `py-2 px-1 rounded font-bold text-xs border ${colorClass} transition-all scale-105`;
+                } else {
+                    btn.className = "py-2 px-1 rounded font-bold text-xs border border-slate-700 bg-slate-800 text-slate-400 transition-all";
+                }
+            });
+
+            updateBranchStandards();
+        }
+
+        function updateBranchStandards() {
+            const config = StandardsDatabase[currentBranch];
+            const gender = selectGender.value;
+            const ageGroup = selectAge.value;
+
+            targetDistance = config.distance;
+            targetMaxTimeSeconds = config.rules[gender][ageGroup];
+            targetPaceSeconds = targetMaxTimeSeconds / targetDistance;
+
+            targetLabel.innerHTML = `${config.name.toUpperCase()} RUN`;
+            targetRule.innerHTML = `Goal: ${targetDistance.toFixed(1)} Miles in under ${formatTime(targetMaxTimeSeconds)} (${formatTime(Math.round(targetPaceSeconds))} Pace)`;
+
+            if (!isRunning) {
+                speak(`Switched to ${config.name} configuration.`);
+            }
+        }
+
+        function toggleRun() {
+            if (!isRunning) {
+                startRun();
+            } else {
+                stopRun();
+            }
+        }
+
+        function startRun() {
+            isRunning = true;
+            elapsedSeconds = 0;
+            totalDistanceMiles = 0.00;
+            lastCueTime = 0;
+            distDisplay.innerText = "0.00";
+            
+            actionBtn.innerHTML = "⏹️ Stop Run";
+            actionBtn.classList.replace("bg-yellow-500", "bg-red-600");
+            actionBtn.classList.replace("hover:bg-yellow-400", "hover:bg-red-500");
+            actionBtn.classList.add("text-white");
+
+            speak(`Starting assessment practice. Target is ${targetDistance} miles. Speed up or slow down according to pacing cues.`);
+
+            timerId = setInterval(() => {
+                elapsedSeconds++;
+                updateTimerUI();
+                processPacingCalculations();
+            }, 1000);
+
+            if ("geolocation" in navigator) {
+                statusBanner.innerHTML = "GPS Tracking Engaged";
+                statusBanner.className = "bg-green-900/40 text-green-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
+                
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        if (position.coords.speed) {
+                            let speedMps = position.coords.speed;
+                            if (speedMps > 0.5) {
+                                totalDistanceMiles += (speedMps * 2.23694) / 3600; 
+                                distDisplay.innerText = totalDistanceMiles.toFixed(2);
+                            }
+                        }
+                    },
+                    (err) => console.error(err),
+                    { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+                );
+            }
+        }
+
+        function stopRun() {
+            isRunning = false;
+            clearInterval(timerId);
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+
+            actionBtn.innerHTML = "🏁 Start Training Run";
+            actionBtn.classList.replace("bg-red-600", "bg-yellow-500");
+            actionBtn.classList.replace("hover:bg-red-500", "hover:bg-yellow-400");
+            actionBtn.classList.remove("text-white");
+
+            speak(`Training completed. Total distance is ${totalDistanceMiles.toFixed(2)} miles.`);
+        }
+
+        function processPacingCalculations() {
+            if (totalDistanceMiles === 0) return;
+
+            const currentPaceSeconds = elapsedSeconds / totalDistanceMiles;
+            updatePaceUI(currentPaceSeconds);
+
+            if (elapsedSeconds - lastCueTime >= 30) {
+                lastCueTime = elapsedSeconds;
+                const paceDifference = currentPaceSeconds - targetPaceSeconds;
+
+                if (paceDifference > 15) {
+                    statusBanner.innerHTML = "⚠️ BEHIND TARGET PACE";
+                    statusBanner.className = "bg-red-900/40 text-red-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide animate-pulse";
+                    speak("Pace is too slow. Increase your speed to meet passing standards.");
+                } else if (paceDifference < -15) {
+                    statusBanner.innerHTML = "🔥 AHEAD OF PACE";
+                    statusBanner.className = "bg-blue-900/40 text-blue-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
+                    speak("You are pacing ahead of standard requirements. Steady tempo.");
+                } else {
+                    statusBanner.innerHTML = "✅ PERFECT PACING";
+                    statusBanner.className = "bg-green-900/40 text-green-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
+                    speak("Your pace is on target. Keep holding this speed.");
+                }
+            }
+
+            if (totalDistanceMiles >= targetDistance) {
+                speak("Target milestone reached. Run complete.");
+                stopRun();
+            }
+        }
+
+        function simulateRunStep(milesToAdd, secondsPassed) {
+            if (!isRunning) startRun();
+            totalDistanceMiles += milesToAdd;
+            elapsedSeconds += secondsPassed;
+            distDisplay.innerText = totalDistanceMiles.toFixed(2);
+            updateTimerUI();
+            processPacingCalculations();
+        }
+
+        function updateTimerUI() { timeDisplay.innerText = formatTime(elapsedSeconds); }
+        function updatePaceUI(secondsPerMile) {
+            if (isFinite(secondsPerMile) && secondsPerMile > 0) {
+                paceDisplay.innerText = formatTime(Math.round(secondsPerMile));
+            } else {
+                paceDisplay.innerText = "--:--";
+            }
+        }
+        function formatTime(totalSec) {
+            const mins = Math.floor(totalSec / 60);
+            const secs = totalSec % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        window.onload = () => { setBranch('airforce'); };
+    </script>
+</body>
+</html>
