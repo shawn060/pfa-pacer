@@ -91,6 +91,20 @@
             </div>
         </div>
 
+        <!-- Stride Metronome Controls (Visible in Distance Run Mode) -->
+        <div id="metronome-panel" class="w-full max-w-sm bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-3">
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">⏱️ Cadence / Stride Metronome</h3>
+            <div class="flex items-center justify-between space-x-4">
+                <button id="metro-btn" onclick="toggleMetronome()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-2 px-3 rounded transition">
+                    🔇 Metronome OFF
+                </button>
+                <div class="w-1/2 text-center">
+                    <span id="metro-spm-val" class="text-sm font-black text-yellow-500 block">170 SPM</span>
+                    <input type="range" min="140" max="210" step="5" value="170" oninput="updateMetronomeSpm(this.value)" class="w-full accent-yellow-500 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+        </div>
+
         <!-- Simulator Helper Controls (Disabled in HAMR Mode) -->
         <div id="simulator-panel" class="w-full max-w-sm bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 space-y-3">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">🧪 Run Simulation Controls</h3>
@@ -190,6 +204,11 @@
         let lastCueTime = 0;
         let halfwayCueTriggered = false;
 
+        // Metronome State
+        let isMetronomeOn = false;
+        let metronomeSpm = 170;
+        let metronomeIntervalId = null;
+
         // HAMR state parameters
         let currentLevelIndex = 0;
         let currentShuttleIndex = 0;
@@ -215,6 +234,7 @@
         const selectGender = document.getElementById('select-gender');
         const selectAge = document.getElementById('select-age');
         const simulatorPanel = document.getElementById('simulator-panel');
+        const metronomePanel = document.getElementById('metronome-panel');
 
         const synth = window.speechSynthesis;
 
@@ -237,6 +257,51 @@
             osc.stop(audioCtx.currentTime + duration);
         }
 
+        // Metronome Click Logic
+        function playMetronomeTick() {
+            if (!isMetronomeOn) return;
+            // Short high-pitched tick sound
+            playBeep(1200, 0.02);
+        }
+
+        function toggleMetronome() {
+            isMetronomeOn = !isMetronomeOn;
+            const btn = document.getElementById('metro-btn');
+            if (isMetronomeOn) {
+                btn.innerHTML = "🔊 Metronome ON";
+                btn.classList.replace("bg-slate-700", "bg-green-600");
+                if (isRunning && currentMode === "run") {
+                    startMetronomeTimer();
+                }
+            } else {
+                btn.innerHTML = "🔇 Metronome OFF";
+                btn.classList.replace("bg-green-600", "bg-slate-700");
+                stopMetronomeTimer();
+            }
+        }
+
+        function startMetronomeTimer() {
+            stopMetronomeTimer();
+            if (!isMetronomeOn) return;
+            const intervalMs = (60 * 1000) / metronomeSpm;
+            metronomeIntervalId = setInterval(playMetronomeTick, intervalMs);
+        }
+
+        function stopMetronomeTimer() {
+            if (metronomeIntervalId) {
+                clearInterval(metronomeIntervalId);
+                metronomeIntervalId = null;
+            }
+        }
+
+        function updateMetronomeSpm(val) {
+            metronomeSpm = parseInt(val);
+            document.getElementById('metro-spm-val').innerText = val + " SPM";
+            if (isMetronomeOn && isRunning && currentMode === "run") {
+                startMetronomeTimer();
+            }
+        }
+
         function setMode(mode) {
             if (isRunning) {
                 alert("Please stop current activity before changing modes.");
@@ -251,12 +316,15 @@
                 runBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md bg-yellow-500 text-slate-950 transition-all";
                 hamrBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all";
                 simulatorPanel.classList.remove('hidden');
+                metronomePanel.classList.remove('hidden');
                 actionBtn.innerText = "🏁 Start Training Run";
             } else {
                 hamrBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md bg-yellow-500 text-slate-950 transition-all";
                 runBtn.className = "w-1/2 py-2 text-xs font-bold rounded-md text-slate-400 hover:text-slate-200 transition-all";
                 simulatorPanel.classList.add('hidden');
+                metronomePanel.classList.add('hidden');
                 actionBtn.innerText = "🏁 Start HAMR Test";
+                if (isMetronomeOn) toggleMetronome(); // Turn off metronome in HAMR mode
             }
 
             resetUI();
@@ -302,6 +370,10 @@
             actionBtn.className = "w-full max-w-sm bg-red-600 hover:bg-red-500 text-white font-black text-lg py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all";
 
             speak(`Starting run. Distance goal is ${targetDistance} miles.`);
+
+            if (isMetronomeOn) {
+                startMetronomeTimer();
+            }
 
             timerId = setInterval(() => {
                 elapsedSeconds++;
@@ -363,6 +435,7 @@
             isRunning = false;
             clearInterval(timerId);
             if (watchId) navigator.geolocation.clearWatch(watchId);
+            stopMetronomeTimer();
 
             actionBtn.innerHTML = currentMode === "run" ? "🏁 Start Training Run" : "🏁 Start HAMR Test";
             actionBtn.className = "w-full max-w-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-lg py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all transform active:scale-95";
@@ -453,6 +526,7 @@
             processRunPacing();
         }
 
+        // Reset UI defaults
         function resetUI() {
             if (currentMode === "run") {
                 primaryMetric.innerText = "0.00";
@@ -485,4 +559,3 @@
     </script>
 </body>
 </html>
-
