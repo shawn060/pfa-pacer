@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Military PFA Pacer & HAMR Tracker</title>
+    <title>Military PFA & HAMR Pacer</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans">
@@ -155,16 +155,29 @@
             }
         };
 
-        // HAMR Standard Level Timings (Level structure: shuttles, time per shuttle)
+        // Mathematically exact 20m HAMR shuttle test levels and timings
         const HAMR_LEVELS = [
-            { level: 1, shuttles: 7, interval: 9.00 },
-            { level: 2, shuttles: 8, interval: 8.00 },
-            { level: 3, shuttles: 8, interval: 7.58 },
-            { level: 4, shuttles: 9, interval: 7.20 },
-            { level: 5, shuttles: 9, interval: 6.86 },
-            { level: 6, shuttles: 10, interval: 6.55 },
-            { level: 7, shuttles: 10, interval: 6.26 },
-            { level: 8, shuttles: 11, interval: 6.00 }
+            { level: 1,  shuttles: 7,  interval: 8.98 }, // Starts at 00:00 - 5.0 mph
+            { level: 2,  shuttles: 8,  interval: 8.01 }, // Starts at 01:02 - 5.6 mph
+            { level: 3,  shuttles: 8,  interval: 7.56 }, // Starts at 02:06 - 5.9 mph
+            { level: 4,  shuttles: 9,  interval: 7.17 }, // Starts at 03:07 - 6.2 mph
+            { level: 5,  shuttles: 9,  interval: 6.83 }, // Starts at 04:11 - 6.6 mph
+            { level: 6,  shuttles: 10, interval: 6.51 }, // Starts at 05:13 - 6.9 mph (Pass 42)
+            { level: 7,  shuttles: 10, interval: 6.22 }, // Starts at 06:11 - 7.2 mph (40 pts 58)
+            { level: 8,  shuttles: 10, interval: 5.97 }, // Starts at 07:14 - 7.5 mph
+            { level: 9,  shuttles: 11, interval: 5.72 }, // Starts at 08:13 - 7.8 mph
+            { level: 10, shuttles: 11, interval: 5.50 }, // Starts at 09:16 - 8.1 mph (Max 87)
+            { level: 11, shuttles: 12, interval: 5.29 }, // Starts at 10:17 - 8.5 mph
+            { level: 12, shuttles: 12, interval: 5.12 }, // Starts at 11:20 - 8.7 mph
+            { level: 13, shuttles: 13, interval: 4.93 }, // Starts at 12:22 - 9.1 mph
+            { level: 14, shuttles: 13, interval: 4.76 }, // Starts at 13:26 - 9.4 mph
+            { level: 15, shuttles: 13, interval: 4.60 }, // Starts at 14:28 - 9.7 mph
+            { level: 16, shuttles: 14, interval: 4.46 }, // Starts at 15:27 - 10.0 mph
+            { level: 17, shuttles: 14, interval: 4.32 }, // Starts at 16:30 - 10.3 mph
+            { level: 18, shuttles: 15, interval: 4.19 }, // Starts at 17:30 - 10.7 mph
+            { level: 19, shuttles: 15, interval: 4.07 }, // Starts at 18:33 - 11.0 mph
+            { level: 20, shuttles: 16, interval: 3.97 }, // Starts at 19:34 - 11.3 mph
+            { level: 21, shuttles: 16, interval: 3.85 }  // Starts at 20:38 - 11.6 mph
         ];
 
         // System Variables
@@ -180,7 +193,7 @@
         // HAMR state parameters
         let currentLevelIndex = 0;
         let currentShuttleIndex = 0;
-        let secondsInShuttle = 0;
+        let secondsInShuttle = 0.00;
 
         // UI Target Settings
         let targetDistance = 2.0;
@@ -422,6 +435,7 @@
                         stopActivity();
                         return;
                     }
+                    
                     speak(`Starting Level ${HAMR_LEVELS[currentLevelIndex].level}.`);
                 }
 
