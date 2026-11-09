@@ -91,12 +91,12 @@
             </div>
         </div>
 
-        <!-- Stride Metronome Controls (Visible in Distance Run Mode) -->
+        <!-- Stride Metronome Controls (Precise Hardware Clock Engine) -->
         <div id="metronome-panel" class="w-full max-w-sm bg-slate-800 rounded-xl p-4 border border-slate-700 space-y-3">
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">⏱️ Cadence / Stride Metronome</h3>
             <div class="flex items-center justify-between space-x-4">
-                <button id="metro-btn" onclick="toggleMetronome()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-2 px-3 rounded transition">
-                    🔇 Metronome OFF
+                <button id="metro-btn" onclick="toggleMetronome()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-2 px-3 rounded transition shadow">
+                    |🔇 Metronome OFF
                 </button>
                 <div class="w-1/2 text-center">
                     <span id="metro-spm-val" class="text-sm font-black text-yellow-500 block">170 SPM</span>
@@ -133,7 +133,7 @@
         const StandardsDatabase = {
             airforce: {
                 name: "Air Force Fitness Assessment",
-                distance: 2.0, // UPDATED: Official 2.0-mile standard run
+                distance: 2.0, // Updated 2-mile standard
                 rules: {
                     male: {
                         under25: 1185, "25to29": 1195, "30to34": 1244, "35to39": 1276, "40to44": 1324, "45to49": 1347, "50to54": 1370, "55to59": 1416, "60plus": 1440
@@ -169,33 +169,33 @@
             }
         };
 
-        // Mathematically exact 20m HAMR shuttle test levels and timings
+        // Mathematically exact 20m HAMR shuttle test levels and timings (Levels 1 - 21)
         const HAMR_LEVELS = [
-            { level: 1,  shuttles: 7,  interval: 8.98 }, // Starts at 00:00 - 5.0 mph
-            { level: 2,  shuttles: 8,  interval: 8.01 }, // Starts at 01:02 - 5.6 mph
-            { level: 3,  shuttles: 8,  interval: 7.56 }, // Starts at 02:06 - 5.9 mph
-            { level: 4,  shuttles: 9,  interval: 7.17 }, // Starts at 03:07 - 6.2 mph
-            { level: 5,  shuttles: 9,  interval: 6.83 }, // Starts at 04:11 - 6.6 mph
-            { level: 6,  shuttles: 10, interval: 6.51 }, // Starts at 05:13 - 6.9 mph (Pass 42)
-            { level: 7,  shuttles: 10, interval: 6.22 }, // Starts at 06:11 - 7.2 mph (40 pts 58)
-            { level: 8,  shuttles: 10, interval: 5.97 }, // Starts at 07:14 - 7.5 mph
-            { level: 9,  shuttles: 11, interval: 5.72 }, // Starts at 08:13 - 7.8 mph
-            { level: 10, shuttles: 11, interval: 5.50 }, // Starts at 09:16 - 8.1 mph (Max 87)
-            { level: 11, shuttles: 12, interval: 5.29 }, // Starts at 10:17 - 8.5 mph
-            { level: 12, shuttles: 12, interval: 5.12 }, // Starts at 11:20 - 8.7 mph
-            { level: 13, shuttles: 13, interval: 4.93 }, // Starts at 12:22 - 9.1 mph
-            { level: 14, shuttles: 13, interval: 4.76 }, // Starts at 13:26 - 9.4 mph
-            { level: 15, shuttles: 13, interval: 4.60 }, // Starts at 14:28 - 9.7 mph
-            { level: 16, shuttles: 14, interval: 4.46 }, // Starts at 15:27 - 10.0 mph
-            { level: 17, shuttles: 14, interval: 4.32 }, // Starts at 16:30 - 10.3 mph
-            { level: 18, shuttles: 15, interval: 4.19 }, // Starts at 17:30 - 10.7 mph
-            { level: 19, shuttles: 15, interval: 4.07 }, // Starts at 18:33 - 11.0 mph
-            { level: 20, shuttles: 16, interval: 3.97 }, // Starts at 19:34 - 11.3 mph
-            { level: 21, shuttles: 16, interval: 3.85 }  // Starts at 20:38 - 11.6 mph
+            { level: 1,  shuttles: 7,  interval: 8.98 }, 
+            { level: 2,  shuttles: 8,  interval: 8.01 }, 
+            { level: 3,  shuttles: 8,  interval: 7.56 }, 
+            { level: 4,  shuttles: 9,  interval: 7.17 }, 
+            { level: 5,  shuttles: 9,  interval: 6.83 }, 
+            { level: 6,  shuttles: 10, interval: 6.51 }, 
+            { level: 7,  shuttles: 10, interval: 6.22 }, 
+            { level: 8,  shuttles: 10, interval: 5.97 }, 
+            { level: 9,  shuttles: 11, interval: 5.72 }, 
+            { level: 10, shuttles: 11, interval: 5.50 }, 
+            { level: 11, shuttles: 12, interval: 5.29 }, 
+            { level: 12, shuttles: 12, interval: 5.12 }, 
+            { level: 13, shuttles: 13, interval: 4.93 }, 
+            { level: 14, shuttles: 13, interval: 4.76 }, 
+            { level: 15, shuttles: 13, interval: 4.60 }, 
+            { level: 16, shuttles: 14, interval: 4.46 }, 
+            { level: 17, shuttles: 14, interval: 4.32 }, 
+            { level: 18, shuttles: 15, interval: 4.19 }, 
+            { level: 19, shuttles: 15, interval: 4.07 }, 
+            { level: 20, shuttles: 16, interval: 3.97 }, 
+            { level: 21, shuttles: 16, interval: 3.85 }  
         ];
 
         // System Variables
-        let currentMode = "run"; // "run" or "hamr"
+        let currentMode = "run"; 
         let isRunning = false;
         let elapsedSeconds = 0;
         let totalDistanceMiles = 0.00;
@@ -204,15 +204,18 @@
         let lastCueTime = 0;
         let halfwayCueTriggered = false;
 
-        // Metronome State
-        let isMetronomeOn = false;
-        let metronomeSpm = 170;
-        let metronomeIntervalId = null;
-
         // HAMR state parameters
         let currentLevelIndex = 0;
         let currentShuttleIndex = 0;
         let secondsInShuttle = 0.00;
+
+        // Metronome State & Hardware Scheduling parameters (Anti-drift Engine)
+        let isMetronomeOn = false;
+        let metronomeSpm = 170;
+        let schedulerTimerId = null;
+        let nextNoteTime = 0.0;     // Time on the audio context timeline when the next click is due
+        const scheduleAheadTime = 0.1; // How far ahead to schedule audio (seconds)
+        const lookaheadInterval = 25.0; // How frequently to call scheduler (milliseconds)
 
         // UI Target Settings
         let targetDistance = 2.0;
@@ -244,24 +247,37 @@
             synth.speak(utterance);
         }
 
-        // Native Beep Sound Generator using HTML5 Web Audio API
+        // Native Sound Generator utilizing the High-Precision Web Audio Hardware clock
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playBeep(frequency = 800, duration = 0.15) {
+        
+        function playBeep(frequency = 800, duration = 0.15, startTime = 0) {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.frequency.value = frequency;
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+            
+            osc.frequency.setValueAtTime(frequency, startTime || audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.2, startTime || audioCtx.currentTime);
+            
+            // Fast decay envelope for metronome "click" feel
+            gain.gain.exponentialRampToValueAtTime(0.001, (startTime || audioCtx.currentTime) + duration);
+            
+            osc.start(startTime || audioCtx.currentTime);
+            osc.stop((startTime || audioCtx.currentTime) + duration + 0.01);
         }
 
-        // Metronome Click Logic
-        function playMetronomeTick() {
-            if (!isMetronomeOn) return;
-            // Short high-pitched tick sound
-            playBeep(1200, 0.02);
+        // Metronome Precise Lookahead Scheduling Engine
+        function scheduler() {
+            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                // Schedule the exact click at nextNoteTime
+                playBeep(1200, 0.02, nextNoteTime);
+                advanceNote();
+            }
+        }
+
+        function advanceNote() {
+            const secondsPerBeat = 60.0 / metronomeSpm;
+            nextNoteTime += secondsPerBeat;
         }
 
         function toggleMetronome() {
@@ -283,14 +299,17 @@
         function startMetronomeTimer() {
             stopMetronomeTimer();
             if (!isMetronomeOn) return;
-            const intervalMs = (60 * 1000) / metronomeSpm;
-            metronomeIntervalId = setInterval(playMetronomeTick, intervalMs);
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            nextNoteTime = audioCtx.currentTime + 0.05;
+            schedulerTimerId = setInterval(scheduler, lookaheadInterval);
         }
 
         function stopMetronomeTimer() {
-            if (metronomeIntervalId) {
-                clearInterval(metronomeIntervalId);
-                metronomeIntervalId = null;
+            if (schedulerTimerId) {
+                clearInterval(schedulerTimerId);
+                schedulerTimerId = null;
             }
         }
 
@@ -324,7 +343,7 @@
                 simulatorPanel.classList.add('hidden');
                 metronomePanel.classList.add('hidden');
                 actionBtn.innerText = "🏁 Start HAMR Test";
-                if (isMetronomeOn) toggleMetronome(); // Turn off metronome in HAMR mode
+                if (isMetronomeOn) toggleMetronome(); // Disable metronome during HAMR test
             }
 
             resetUI();
@@ -491,7 +510,6 @@
             secondaryLeft.innerText = secondsInShuttle.toFixed(1) + "s";
 
             if (secondsInShuttle >= currentLevel.interval) {
-                // Next shuttle interval transition
                 secondsInShuttle = 0.00;
                 currentShuttleIndex++;
                 
@@ -499,7 +517,6 @@
                 secondaryRight.innerText = totalShuttlesRun;
 
                 if (currentShuttleIndex > currentLevel.shuttles) {
-                    // level transition
                     currentShuttleIndex = 1;
                     currentLevelIndex++;
                     
@@ -513,7 +530,7 @@
                 }
 
                 primaryMetric.innerText = `${HAMR_LEVELS[currentLevelIndex].level} - ${currentShuttleIndex}`;
-                playBeep(900, 0.2); // Core beat tone signaling the shuttle lap line limit
+                playBeep(900, 0.2); 
             }
         }
 
@@ -526,7 +543,6 @@
             processRunPacing();
         }
 
-        // Reset UI defaults
         function resetUI() {
             if (currentMode === "run") {
                 primaryMetric.innerText = "0.00";
