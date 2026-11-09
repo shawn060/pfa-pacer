@@ -96,7 +96,7 @@
             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">⏱️ Cadence / Stride Metronome</h3>
             <div class="flex items-center justify-between space-x-4">
                 <button id="metro-btn" onclick="toggleMetronome()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-2 px-3 rounded transition shadow">
-                    |🔇 Metronome OFF
+                    🔇 Metronome OFF
                 </button>
                 <div class="w-1/2 text-center">
                     <span id="metro-spm-val" class="text-sm font-black text-yellow-500 block">170 SPM</span>
@@ -213,9 +213,9 @@
         let isMetronomeOn = false;
         let metronomeSpm = 170;
         let schedulerTimerId = null;
-        let nextNoteTime = 0.0;     // Time on the audio context timeline when the next click is due
-        const scheduleAheadTime = 0.1; // How far ahead to schedule audio (seconds)
-        const lookaheadInterval = 25.0; // How frequently to call scheduler (milliseconds)
+        let nextNoteTime = 0.0;     
+        const scheduleAheadTime = 0.1; 
+        const lookaheadInterval = 25.0; 
 
         // UI Target Settings
         let targetDistance = 2.0;
@@ -259,7 +259,6 @@
             osc.frequency.setValueAtTime(frequency, startTime || audioCtx.currentTime);
             gain.gain.setValueAtTime(0.2, startTime || audioCtx.currentTime);
             
-            // Fast decay envelope for metronome "click" feel
             gain.gain.exponentialRampToValueAtTime(0.001, (startTime || audioCtx.currentTime) + duration);
             
             osc.start(startTime || audioCtx.currentTime);
@@ -269,7 +268,6 @@
         // Metronome Precise Lookahead Scheduling Engine
         function scheduler() {
             while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
-                // Schedule the exact click at nextNoteTime
                 playBeep(1200, 0.02, nextNoteTime);
                 advanceNote();
             }
@@ -343,7 +341,7 @@
                 simulatorPanel.classList.add('hidden');
                 metronomePanel.classList.add('hidden');
                 actionBtn.innerText = "🏁 Start HAMR Test";
-                if (isMetronomeOn) toggleMetronome(); // Disable metronome during HAMR test
+                if (isMetronomeOn) toggleMetronome(); 
             }
 
             resetUI();
@@ -404,174 +402,4 @@
                 statusBanner.innerHTML = "GPS Tracking Engaged";
                 statusBanner.className = "bg-green-900/40 text-green-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
                 
-                watchId = navigator.geolocation.watchPosition(
-                    (position) => {
-                        if (position.coords.speed) {
-                            let speedMps = position.coords.speed;
-                            if (speedMps > 0.5) {
-                                totalDistanceMiles += (speedMps * 2.23694) / 3600; 
-                                primaryMetric.innerText = totalDistanceMiles.toFixed(2);
-                            }
-                        }
-                    },
-                    (err) => console.error(err),
-                    { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
-                );
-            }
-        }
-
-        function startHamr() {
-            isRunning = true;
-            elapsedSeconds = 0;
-            currentLevelIndex = 0;
-            currentShuttleIndex = 0;
-            secondsInShuttle = 0.00;
-            resetUI();
-
-            primaryMetric.innerText = "1 - 1";
-            primaryMetricLabel.innerText = "Level - Shuttle";
-            secondaryLeft.innerText = "0.0s";
-            secondaryLeftLabel.innerText = "Interval Timer";
-            secondaryRight.innerText = "0";
-            secondaryRightLabel.innerText = "Total Shuttles";
-
-            actionBtn.innerHTML = "⏹️ Stop HAMR";
-            actionBtn.className = "w-full max-w-sm bg-red-600 hover:bg-red-500 text-white font-black text-lg py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all";
-
-            statusBanner.innerHTML = "HAMR Test Started. Get Ready!";
-            statusBanner.className = "bg-blue-900/40 text-blue-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide animate-pulse";
-
-            speak("HAMR test starting in five seconds. On the first line. Go on the signal tone.");
-
-            // Start test interval
-            setTimeout(() => {
-                playBeep(1000, 0.4);
-                timerId = setInterval(processHamrTick, 100); // 10 ticks per second for precise pacing calculations
-            }, 5000);
-        }
-
-        function stopActivity() {
-            isRunning = false;
-            clearInterval(timerId);
-            if (watchId) navigator.geolocation.clearWatch(watchId);
-            stopMetronomeTimer();
-
-            actionBtn.innerHTML = currentMode === "run" ? "🏁 Start Training Run" : "🏁 Start HAMR Test";
-            actionBtn.className = "w-full max-w-sm bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-lg py-4 rounded-xl shadow-lg uppercase tracking-widest transition-all transform active:scale-95";
-
-            if (currentMode === "run") {
-                speak(`Run finished. Total distance is ${totalDistanceMiles.toFixed(2)} miles.`);
-            } else {
-                speak(`HAMR test stopped. You completed level ${HAMR_LEVELS[currentLevelIndex].level}, shuttle ${currentShuttleIndex}. Excellent effort.`);
-            }
-            resetUI();
-        }
-
-        function processRunPacing() {
-            if (totalDistanceMiles === 0) return;
-
-            const currentPaceSeconds = elapsedSeconds / totalDistanceMiles;
-            secondaryRight.innerText = formatTime(Math.round(currentPaceSeconds));
-
-            // Dynamic Halfway Mark Voice Cue
-            if (!halfwayCueTriggered && totalDistanceMiles >= (targetDistance / 2)) {
-                halfwayCueTriggered = true;
-                speak(`Halfway point achieved. You are at ${totalDistanceMiles.toFixed(2)} miles in ${formatTime(elapsedSeconds)}.`);
-            }
-
-            if (elapsedSeconds - lastCueTime >= 30) {
-                lastCueTime = elapsedSeconds;
-                const paceDifference = currentPaceSeconds - targetPaceSeconds;
-
-                if (paceDifference > 15) {
-                    statusBanner.innerHTML = "⚠️ BEHIND TARGET PACE";
-                    statusBanner.className = "bg-red-900/40 text-red-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide animate-pulse";
-                    speak("Increase your pace. You are currently running behind standard requirements.");
-                } else if (paceDifference < -15) {
-                    statusBanner.innerHTML = "🔥 AHEAD OF PACE";
-                    statusBanner.className = "bg-blue-900/40 text-blue-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
-                    speak("Looking strong. You are slightly ahead of target pace.");
-                } else {
-                    statusBanner.innerHTML = "✅ PERFECT PACING";
-                    statusBanner.className = "bg-green-900/40 text-green-400 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
-                    speak("Pacing is on targets. Hold steady.");
-                }
-            }
-
-            if (totalDistanceMiles >= targetDistance) {
-                speak("Milestone target reached. Assessment run completed.");
-                stopActivity();
-            }
-        }
-
-        function processHamrTick() {
-            const currentLevel = HAMR_LEVELS[currentLevelIndex];
-            secondsInShuttle += 0.10;
-            secondaryLeft.innerText = secondsInShuttle.toFixed(1) + "s";
-
-            if (secondsInShuttle >= currentLevel.interval) {
-                secondsInShuttle = 0.00;
-                currentShuttleIndex++;
-                
-                let totalShuttlesRun = parseInt(secondaryRight.innerText) + 1;
-                secondaryRight.innerText = totalShuttlesRun;
-
-                if (currentShuttleIndex > currentLevel.shuttles) {
-                    currentShuttleIndex = 1;
-                    currentLevelIndex++;
-                    
-                    if (currentLevelIndex >= HAMR_LEVELS.length) {
-                        speak("Congratulations. You have completed the maximum stage of the shuttle run.");
-                        stopActivity();
-                        return;
-                    }
-                    
-                    speak(`Starting Level ${HAMR_LEVELS[currentLevelIndex].level}.`);
-                }
-
-                primaryMetric.innerText = `${HAMR_LEVELS[currentLevelIndex].level} - ${currentShuttleIndex}`;
-                playBeep(900, 0.2); 
-            }
-        }
-
-        function simulateRunStep(milesToAdd, secondsPassed) {
-            if (!isRunning) startRun();
-            totalDistanceMiles += milesToAdd;
-            elapsedSeconds += secondsPassed;
-            primaryMetric.innerText = totalDistanceMiles.toFixed(2);
-            updateTimerUI();
-            processRunPacing();
-        }
-
-        function resetUI() {
-            if (currentMode === "run") {
-                primaryMetric.innerText = "0.00";
-                primaryMetricLabel.innerText = "MILES";
-                secondaryLeft.innerText = "00:00";
-                secondaryLeftLabel.innerText = "Time Elapsed";
-                secondaryRight.innerText = "--:--";
-                secondaryRightLabel.innerText = "Current Pace";
-            } else {
-                primaryMetric.innerText = "1 - 1";
-                primaryMetricLabel.innerText = "Level - Shuttle";
-                secondaryLeft.innerText = "0.0s";
-                secondaryLeftLabel.innerText = "Interval Timer";
-                secondaryRight.innerText = "0";
-                secondaryRightLabel.innerText = "Total Shuttles";
-            }
-            statusBanner.innerHTML = "Select Settings & Tap Start";
-            statusBanner.className = "bg-slate-700 text-yellow-500 text-center py-2 px-4 rounded-lg font-bold text-sm uppercase tracking-wide";
-        }
-
-        function updateTimerUI() { secondaryLeft.innerText = formatTime(elapsedSeconds); }
-        
-        function formatTime(totalSec) {
-            const mins = Math.floor(totalSec / 60);
-            const secs = totalSec % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        window.onload = () => { setMode('run'); };
-    </script>
-</body>
-</html>
+                watchId = navigator.geolocation.watc
